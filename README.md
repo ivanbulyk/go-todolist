@@ -14,7 +14,7 @@ Install go-sql-driver
 go get -u github.com/go-sql-driver/mysql
 ```
 
-Modify constants in main.go file for correct mysql configuration and run
+Modify constants in main.go file for correct mysql configuration and run main.go
 
 ```
 go run main.go
