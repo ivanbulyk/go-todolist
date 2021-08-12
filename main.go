@@ -75,16 +75,15 @@ func main() {
 
 		todos, err := db.Query("select * from todos")
 
-		defer todos.Close()
-
 		if err != nil {
 			log.Printf("Error %s when selecting todos", err)
 			//return
 		}
 		log.Println("Successfully selecting todos")
 
+		defer todos.Close()
 
-
+		
 		var todo []Todo
 
 		for todos.Next() {
