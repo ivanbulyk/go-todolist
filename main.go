@@ -3,50 +3,73 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"html/template"
-	"net/http"
-	"strconv"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"html/template"
+	"log"
+	"net/http"
+	"strconv"
 )
 
 const (
-	username = "root"
+	username = "myuser"
 	password = "password"
 	portnum = 3306
 	dbname = "todolist"
+	host = "localhost"
 )
 
+type Todo struct {
+	Id    int
+	Title string
+}
+
+type TodoPageData struct {
+	PageTitle string
+	Todos     []Todo
+}
+
+
 func main() {
-	fmt.Println("Hello world")
+
+	//appEnv := &AppEnv{}
+
+	log.Print("Starting the service...")
+
 
 	r := mux.NewRouter()
 
-	type Todo struct {
-		Id    int
-		Title string
-		Done  bool
-	}
 
-	type TodoPageData struct {
-		PageTitle string
-		Todos     []Todo
-	}
 
-	conf := username + ":" + password + "@(localhost:" + strconv.Itoa(portnum) + ")/" + dbname + "?parseTime=true"
+	DSN := username + ":" + password + "@(" + host +":" + strconv.Itoa(portnum) + ")/" + dbname + "?parseTime=true"
 
-	fmt.Println(conf)
+	//fmt.Println(DSN)
 
-	db, err := sql.Open("mysql", conf)
+	db, err := sql.Open("mysql", DSN)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Printf("Error %s when opening DB\n", err)
 		return
-	} else {
-		fmt.Println("no error")
+	}
+	defer db.Close()
+
+	log.Printf("Connected to DB %s successfully\n", dbname)
+
+	query := `CREATE TABLE IF NOT EXISTS todos (
+                        id int(11) unsigned NOT NULL AUTO_INCREMENT,
+                        title VARCHAR(128) NOT NULL DEFAULT "",
+                        PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
+
+	_, err = db.Exec(query)
+	if err != nil {
+		log.Printf("Error %s when creating todos table", err)
+		return
 	}
 
 	homeTempl := template.Must(template.ParseFiles("./templates/index.html"))
+
+
 
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
@@ -55,111 +78,78 @@ func main() {
 		defer todos.Close()
 
 		if err != nil {
-			fmt.Println(err)
-		} else {
-			fmt.Println("no error selecting todos")
+			log.Printf("Error %s when selecting todos", err)
+			//return
 		}
+		log.Println("Successfully selecting todos")
+
+
 
 		var todo []Todo
 
 		for todos.Next() {
 			var t Todo
-			err := todos.Scan(&t.Id, &t.Title, &t.Done)
-			// fmt.Println(err)
-			if err == nil {
-				fmt.Println(t)
-				todo = append(todo, t)
-				// fmt.Println(todo)
-			} else {
-				fmt.Println(err)
+			err := todos.Scan(&t.Id, &t.Title)
+
+			if err != nil {
+				log.Printf("Error %s", err)
 				return
 			}
+			log.Println("Successfully selecting todo", t)
+			todo = append(todo, t)
+
 		}
 
-		// if r.Method == http.MethodPost{
-		// 	title := r.FormValue("todotitle")
-		// 	if title != ""{
-		// 		_, err := db.Exec(`insert into todos (title, done) values(?, ?)`, title, 0)
-		// 		if err != nil {
-		// 			fmt.Println(err)
-		// 		}else{
-		// 			fmt.Println("Todo inserted successfully")
-		// 		}
-		// 	}
-
-		// }
-
-		fmt.Println(todo)
+		//todo, _ := store.PoolStoreDB.All()
 
 		data := TodoPageData{
 			PageTitle: "To do list",
 			Todos:     todo,
 		}
 
-		// data = TodoPageData{
-		// 	PageTitle: "To do custom",
-		// 	Todos: []Todo{
-		// 		{1, "test", true},
-		// 		{2, "test", false},
-		// 	},
-		// }
 
-		// for _, t := range todo {
-		// 	fmt.Println(t.title)
-		// }
 
 		fmt.Println(data)
 		er := homeTempl.Execute(w, data)
 
 		if er != nil {
-			fmt.Println(er)
+			log.Println(er)
 		}
 	})
+
 
 	r.HandleFunc("/remove-todo/{id}", func(w http.ResponseWriter, r *http.Request){
 		id := mux.Vars(r)["id"]
 		_, err := db.Exec(`Delete from todos where id = ?`, id)
 
 		if err != nil{
-			fmt.Println(err)
-		}else{
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+			log.Printf("Error %s", err)
 		}
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		log.Printf("Successfully deleted todo with ID: %s\n", id)
 
 	})
+
+
 
 	r.HandleFunc("/add-todo", func(w http.ResponseWriter, r *http.Request){
 		if r.Method == http.MethodPost {
 			title := r.FormValue("todotitle")
 			_, err = db.Exec("insert into todos(title) values(?)", title)
+
 			if err != nil{
-				fmt.Println(err)
-			}else {
-				fmt.Println("no errors")
-				http.Redirect(w, r, "/", http.StatusSeeOther)
+				log.Printf("Error %s", err)
 			}
+			log.Println("no errors")
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 		}
 	})
 
-	// r.HandleFunc("/books/{title}/page/{page}", func(w http.ResponseWriter, r *http.Request) {
-	// 	vars := mux.Vars(r)
-	// 	title := vars["title"]
-	// 	pages := vars["page"]
-
-	// 	fmt.Fprintf(w, "You have requested the book %s on page %s\n", title, pages)
-	// })
-
-	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request){
-	// 	fmt.Fprintf(w, "Welcome to my website!!")
-	// })
-
-	// fs := http.FileServer(http.Dir("static/"))
-
-	// http.Handle("/assets/", http.StripPrefix("/assets/", fs))
 
 	r.
 		PathPrefix("/assets/").
 		Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("."+"/assets/"))))
 
-	http.ListenAndServe(":8090", r)
+
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
