@@ -2,6 +2,9 @@
 
 Implementation of a simple todolist webapp using Go programming language using gorilla/mux and go-sql-driver libararies
 
+Clone the project. It uses Go Modules for dependency management, so you'll only will have to change for proper module
+path. Everything else should be resolved automatically. If not, do it yourself)
+
 Install gorilla/mux
 
 ```
@@ -32,7 +35,7 @@ Then run it in Docker using
 docker-compose up
 ```
 
-And then run 
+And then run at the root of the project directory
 
 ```bigquery
 go run .

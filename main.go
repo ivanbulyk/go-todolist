@@ -32,7 +32,7 @@ type TodoPageData struct {
 
 func main() {
 
-	//appEnv := &AppEnv{}
+
 
 	log.Print("Starting the service...")
 
@@ -99,7 +99,7 @@ func main() {
 
 		}
 
-		//todo, _ := store.PoolStoreDB.All()
+
 
 		data := TodoPageData{
 			PageTitle: "To do list",
