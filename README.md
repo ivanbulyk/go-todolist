@@ -19,3 +19,15 @@ Modify constants in main.go file for correct mysql configuration and run main.go
 ```
 go run main.go
 ```
+
+Or use this command to stop local mysql service
+
+```bigquery
+sudo systemctl stop mysql
+```
+
+Then run it in Docker using
+
+```bigquery
+docker-compose up
+```
