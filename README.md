@@ -31,3 +31,9 @@ Then run it in Docker using
 ```bigquery
 docker-compose up
 ```
+
+And then run 
+
+```bigquery
+go run .
+```

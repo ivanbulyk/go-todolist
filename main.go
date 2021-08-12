@@ -83,7 +83,7 @@ func main() {
 
 		defer todos.Close()
 
-		
+
 		var todo []Todo
 
 		for todos.Next() {
